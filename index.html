@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GVITA - AI 기반 골프 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        ul {
+            list-style: none;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 헤더 스타일 */
+        header {
+            background: linear-gradient(135deg, #0a1f0a 0%, #1a3c1a 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" opacity="0.05"><path d="M30,30 Q50,10 70,30 T90,50 T70,70 T50,90 T30,70 T10,50 T30,30 Z" fill="white"/></svg>');
+            z-index: 0;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-img {
+            height: 60px;
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+        }
+        
+        .contact-info {
+            text-align: right;
+            font-size: 14px;
+        }
+        
+        /* 네비게이션 스타일 */
+        nav {
+            background-color: #0a1f0a;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .main-menu {
+            display: flex;
+            position: relative;
+        }
+        
+        .main-menu > li {
+            position: relative;
+        }
+        
+        .main-menu > li > a {
+            display: block;
+            padding: 18px 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-menu > li > a::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #8bc34a, #4caf50);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .main-menu > li > a:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+        
+        .main-menu > li > a:hover::before {
+            width: 80%;
+        }
+        
+        .sub-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: rgba(255,255,255,0.95);
+            min-width: 220px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+        }
+        
+        .sub-menu li a {
+            display: block;
+            padding: 14px 20px;
+            color: #333;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .sub-menu li a::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, rgba(139,195,74,0.1), rgba(76,175,80,0.1));
+            transition: width 0.3s ease;
+        }
+        
+        .sub-menu li a:hover {
+            background-color: rgba(0,0,0,0.02);
+            color: #4caf50;
+            padding-left: 25px;
+        }
+        
+        .sub-menu li a:hover::before {
+            width: 5px;
+        }
+        
+        .main-menu li:hover .sub-menu {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 히어로 섹션 스타일 */
+        .hero {
+            height: 700px;
+            background: linear-gradient(rgba(10,31,10,0.7), rgba(10,31,10,0.5)), url('https://images.unsplash.com/photo-1535131749006-b7f58c99034b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(transparent, #f8f9fa);
+        }
+        
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 52px;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            font-weight: 700;
+            background: linear-gradient(90deg, #fff, #e8f5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 22px;
+            margin-bottom: 40px;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 14px 35px;
+            background: linear-gradient(135deg, #8bc34a, #4caf50);
+            color: white;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.6s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(76,175,80,0.4);
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        /* 특징 섹션 스타일 */
+        .features {
+            padding: 100px 0;
+            background-color: white;
+            position: relative;
+        }
+        
+        .features::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #4caf50, transparent);
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 70px;
+        }
+        
+        .section-title h2 {
+            font-size: 40px;
+            color: #0a1f0a;
+            margin-bottom: 20px;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .section-title h2::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #8bc34a, #4caf50);
+            border-radius: 3px;
+        }
+        
+        .section-title p {
+            color: #666;
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 18px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 40px;
+        }
+        
+        .feature-card {
+            background-color: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.4s ease;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .feature-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #8bc34a, #4caf50);
+            z-index: 1;
+        }
+        
+        .feature-img {
+            height: 220px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .feature-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.7s ease;
+        }
+        
+        .feature-card:hover .feature-img img {
+            transform: scale(1.1);
+        }
+        
+        .feature-content {
+            padding: 30px;
+        }
+        
+        .feature-content h3 {
+            font-size: 22px;
+            margin-bottom: 15px;
+            color: #0a1f0a;
+            font-weight: 600;
+        }
+        
+        .feature-content p {
+            color: #666;
+            line-height: 1.7;
+        }
+        
+        /* 연락처 섹션 스타일 */
+        .contact {
+            padding: 100px 0;
+            background: linear-gradient(135deg, #0a1f0a 0%, #1a3c1a 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .contact::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" opacity="0.03"><path d="M30,30 Q50,10 70,30 T90,50 T70,70 T50,90 T30,70 T10,50 T30,30 Z" fill="white"/></svg>');
+        }
+        
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 50px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .contact-info h3 {
+            font-size: 28px;
+            margin-bottom: 25px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .contact-info h3::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #8bc34a, #4caf50);
+            border-radius: 3px;
+        }
+        
+        .contact-info p {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            opacity: 0.9;
+        }
+        
+        .contact-info i {
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+            color: #8bc34a;
+        }
+        
+        .map {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: 350px;
+        }
+        
+        .map img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* 푸터 스타일 */
+        footer {
+            background-color: #061006;
+            color: #aaa;
+            padding: 60px 0 20px;
+            position: relative;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 30px;
+        }
+        
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 25px;
+            font-size: 20px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .footer-section h3::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, #8bc34a, #4caf50);
+        }
+        
+        .footer-section p, .footer-section a {
+            margin-bottom: 12px;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        
+        .footer-section a:hover {
+            color: #8bc34a;
+            padding-left: 5px;
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* 반응형 스타일 */
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .logo {
+                margin-bottom: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 38px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+            
+            .main-menu {
+                flex-direction: column;
+            }
+            
+            .sub-menu {
+                position: static;
+                display: none;
+                box-shadow: none;
+                background-color: rgba(0,0,0,0.2);
+            }
+            
+            .main-menu li:hover .sub-menu {
+                display: none;
+            }
+            
+            .main-menu li.active .sub-menu {
+                display: block;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <!-- 헤더 -->
+    <header>
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <!-- GVITA CI 로고 이미지 -->
+                    <img src="https://via.placeholder.com/300x80/0a1f0a/ffffff?text=GVITA+CI+Logo" alt="GVITA" class="logo-img">
+                </div>
+                <div class="contact-info">
+                    <p>대표: 김선호 | Tel: 010-2723-5010</p>
+                    <p>경기도 부천시 원미구 조마루로 385번길 20 신호시스템 빌딩 2층</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 네비게이션 -->
+        <nav>
+            <div class="container">
+                <ul class="main-menu">
+                    <li>
+                        <a href="index.html" style="background-color: rgba(255,255,255,0.1);">홈</a>
+                    </li>
+                    <li>
+                        <a href="about.html">회사소개</a>
+                        <ul class="sub-menu">
+                            <li><a href="about.html">인사말</a></li>
+                            <li><a href="history.html">회사연혁</a></li>
+                            <li><a href="organization.html">조직도</a></li>
+                            <li><a href="location.html">오시는길</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="products.html">제품소개</a>
+                        <ul class="sub-menu">
+                            <li><a href="product-simulator.html">골프 시뮬레이터</a></li>
+                            <li><a href="product-parkgolf.html">파크골프 시스템</a></li>
+                            <li><a href="product-multicourse.html">멀티코스 게임</a></li>
+                            <li><a href="product-sensors.html">초고속 센서 시스템</a></li>
+                            <li><a href="product-ventilation.html">공기청정 환기시스템</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">기술특징</a>
+                        <ul class="sub-menu">
+                            <li><a href="tech-ai.html">AI 스윙 분석</a></li>
+                            <li><a href="tech-graphics.html">실감형 콘텐츠</a></li>
+                            <li><a href="tech-sound.html">돌비 사운드</a></li>
+                            <li><a href="tech-data.html">데이터 분석</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">고객지원</a>
+                        <ul class="sub-menu">
+                            <li><a href="download.html">다운로드</a></li>
+                            <li><a href="faq.html">자주묻는질문</a></li>
+                            <li><a href="qna.html">Q&A</a></li>
+                            <li><a href="contact.html">문의하기</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>AI 기반 차세대 골프 시뮬레이션</h1>
+                <p>GVITA의 최첨단 기술로 구현된 가상 골프의 새로운 패러다임</p>
+                <a href="product-simulator.html" class="btn">체험 예약하기</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 특징 섹션 -->
+    <section class="features">
+        <div class="container">
+            <div class="section-title">
+                <h2>GVITA의 특장점</h2>
+                <p>최신 기술과 혁신적인 접근법으로 골프의 미래를 선도합니다</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1598880940086-4b1de1a1d1e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="AI 스윙 분석">
+                    </div>
+                    <div class="feature-content">
+                        <h3>AI 스윙 분석</h3>
+                        <p>인공지능 기반 정밀 스윙 분석으로 완벽한 스윙을 위한 맞춤형 코칭을 제공합니다.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1590232670695-6a2d718a6eb7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="메타버스 골프장">
+                    </div>
+                    <div class="feature-content">
+                        <h3>메타버스 골프장</h3>
+                        <p>국내 유명 골프장을 메타버스로 구현하여 실제와 같은 라운딩 경험을 제공합니다.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="초고해상도">
+                    </div>
+                    <div class="feature-content">
+                        <h3>초고해상도 그래픽</h3>
+                        <p>생생한 디테일과 선명한 화질로 실제 골프장에 있는 듯한 몰입감을 선사합니다.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1558618666-fcd25856cd63?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="비용 절감">
+                    </div>
+                    <div class="feature-content">
+                        <h3>비용 절감 구조</h3>
+                        <p>기존 설치 비용 대비 50% 절감으로 더 많은 고객이 접근할 수 있는 가격 경쟁력을 확보했습니다.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1531053326602-dfe10b42d8e9?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="글로벌 네트워크">
+                    </div>
+                    <div class="feature-content">
+                        <h3>글로벌 네트워크</h3>
+                        <p>미국, 중국, 동남아시아를 중심으로 한 글로벌 생산 및 유통망을 구축했습니다.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-img">
+                        <img src="https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80" alt="실감형 콘텐츠">
+                    </div>
+                    <div class="feature-content">
+                        <h3>실감형 콘텐츠</h3>
+                        <p>돌비 5.1 스테레오 사운드로 실제 골프장의 청각적 경험을 완벽하게 재현합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 연락처 섹션 -->
+    <section class="contact">
+        <div class="container">
+            <div class="section-title">
+                <h2>문의 및 오시는 길</h2>
+                <p>GVITA에 방문하시거나 문의사항이 있으시면 연락주세요</p>
+            </div>
+            
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>연락처 정보</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> 경기도 부천시 원미구 조마루로 385번길 20 신호시스템 빌딩 2층</p>
+                    <p><i class="fas fa-phone"></i> 010-2723-5010</p>
+                    <p><i class="fas fa-user"></i> 대표: 김선호</p>
+                    <p><i class="fas fa-clock"></i> 영업시간: 평일 09:00 - 18:00</p>
+                    <p><i class="fas fa-envelope"></i> Email: info@gvita.com</p>
+                </div>
+                
+                <div class="map">
+                    <img src="https://via.placeholder.com/600x350?text=GVITA+위치+지도" alt="GVITA 위치" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>GVITA</h3>
+                    <p>최첨단 AI 기술과 메타버스를 접목한 차세대 골프 시뮬레이션 시스템을 제공합니다.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>바로가기</h3>
+                    <a href="index.html">홈</a>
+                    <a href="about.html">회사소개</a>
+                    <a href="products.html">제품소개</a>
+                    <a href="contact.html">고객지원</a>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>연락처</h3>
+                    <p>경기도 부천시 원미구 조마루로 385번길 20 신호시스템 빌딩 2층</p>
+                    <p>Tel: 010-2723-5010</p>
+                    <p>Email: info@gvita.com</p>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>Copyright &copy; 2023 GVITA. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 모바일 메뉴 토글 기능
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('.main-menu > li');
+            
+            if (window.innerWidth <= 768) {
+                menuItems.forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        if (this.classList.contains('active')) {
+                            this.classList.remove('active');
+                        } else {
+                            menuItems.forEach(otherItem => {
+                                otherItem.classList.remove('active');
+                            });
+                            this.classList.add('active');
+                        }
+                        e.preventDefault();
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
